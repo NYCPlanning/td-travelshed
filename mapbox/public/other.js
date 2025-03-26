@@ -1,2 +1,3 @@
 console.log(importantVariable);
-mapboxgl.accessToken = process.env.MAPBOXTOKEN
+const mySecret = process.env.TEST
+console.log(`The value of MY_SECRET is: ${mySecret}`);
