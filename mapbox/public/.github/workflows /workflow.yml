@@ -1,0 +1,4 @@
+name: workflow
+
+env: 
+  mapboxtoken: ${{secrets.mapboxtoken}} 
