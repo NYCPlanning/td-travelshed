@@ -1,1 +1,0 @@
-const importantVariable = 20;
