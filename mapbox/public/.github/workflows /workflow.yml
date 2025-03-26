@@ -6,19 +6,24 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 1200
     steps:
-        
-    - name: Running
-      run: |
-        echo "Running!"
+      - name: Git checkout
+        uses: actions/checkout@v2
 
-    - name: env
-      env: 
-        TEST: ${{ secrets.TEST }} 
-        MAPBOXTOKEN: ${{ secrets.MAPBOXTOKEN }} 
-    - name: Git push
-      run: |
-        git config --global user.name "rrlinrr"
-        git config --global user.email "rlin@planning.nyc.gov"
-        git add .
-        git commit -m "update"
-        git push
+      - name: Use Node 12.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+
+      - name: Install Dependencies (prod)
+        run: yarn install --frozen-lockfile --production
+
+      - name: Run Tests (JEST)
+        run: yarn test --ci --silent --testPathIgnorePatterns=experimental
+        env:
+          CI: true
+          TEST: ${{ secrets.TEST }} 
+
+      - uses: oNaiPs/secrets-to-env-action@v1
+        with:
+          TEST: ${{ TEST }}
+      - run: node -e "console.log(process.env.TEST)"
