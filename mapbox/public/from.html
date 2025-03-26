@@ -265,8 +265,8 @@
         'use strict';
         // Set MapBox token
         
-        console.log('my env var', ${{ secrets.TEST }});
-        mapboxgl.accessToken = "%MAPBOXTOKEN%";
+        console.log('my env var', 'TEST');
+        mapboxgl.accessToken = %MAPBOXTOKEN%;
         
         // mapboxgl.accessToken = process.env.mapboxtoken; // still need to find a way to store the token
 
