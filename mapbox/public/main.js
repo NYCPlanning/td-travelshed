@@ -1,0 +1,1 @@
+const importantVariable = 10;
