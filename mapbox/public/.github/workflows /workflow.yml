@@ -1,3 +1,24 @@
-env: 
-  TEST: ${{ secrets.TEST }} 
-  MAPBOXTOKEN: ${{ secrets.MAPBOXTOKEN }} 
+name: workflow
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 1200
+    steps:
+        
+    - name: Running
+      run: |
+        echo "Running!"
+
+    - name: env
+      env: 
+        TEST: ${{ secrets.TEST }} 
+        MAPBOXTOKEN: ${{ secrets.MAPBOXTOKEN }} 
+    - name: Git push
+      run: |
+        git config --global user.name "rrlinrr"
+        git config --global user.email "rlin@planning.nyc.gov"
+        git add .
+        git commit -m "update"
+        git push
