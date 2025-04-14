@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NYC DCP Transit Travelshed</title>
+
+    <script src="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-b5kHyXgcpbZJO/tY9Ul7kGkf1S0CWuKcCD38l8YkeH8z8QjE0GmW1gYU5S9FOnJ0"
+        crossorigin="anonymous"></script>
+
+
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+        }
+
+        #banner {
+            background-color: rgba(217, 107, 39, 1);
+            z-index: 1000;
+        }
+
+        #dcplogo {
+            height: 2rem;
+        }
+
+        .navbar-brand {
+            margin-left: 1rem;
+            margin-right: 1rem;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .navbar-toggler {
+            border-width: 0.2rem;
+            padding: 0.1rem;
+            margin-right: 1rem;
+        }
+
+        .nav-link {
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 0.5rem 0.5rem 0.5rem 0.5rem;
+            margin-left: 0.5rem;
+            margin-right: 0.5rem;
+        }
+
+        #main {
+            position: absolute;
+            top: 5rem;
+            padding-bottom: 5rem;
+            padding-left: 20%;
+            padding-right: 20%;
+            z-index: -1000;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        a {
+            color: rgba(217, 107, 39, 1);
+            text-decoration: none;
+        }
+
+        a:hover {
+            color: rgba(217, 107, 39, 1);
+        }
+    </style>
+</head>
+
+
+
+<body>
+    <nav class="navbar navbar-expand-lg fixed-top navbar-dark g-0 p-0 m-0" id="banner">
+        <a class="navbar-brand p-0" href="http://www1.nyc.gov/site/planning/index.page">
+            <img src="https://raw.githubusercontent.com/NYCPlanning/dcp-logo/master/dcp_logo_white_772.png"
+                id="dcplogo">
+            <sup> Beta </sup>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#bannertoggle">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse p-0 justify-content-start" id="bannertoggle">
+            <ul class="navbar-nav p-0">
+                <a class="nav-link active" href="index.html">
+                    Home </a>
+                <a class="nav-link" href="from.html">
+                    Transit Travelshed FROM a Census Tract </a>
+                <a class="nav-link" href="to.html">
+                    Transit Travelshed TO a Census Tract </a>
+                <a class="nav-link" href="tti.html">
+                    Transit Travelshed Index </a>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container-fluid g-0" id="main">
+        <div class="row justify-content-start">
+            <div class="col-12">
+                <h1>
+                    What Is a Travelshed?
+                </h1>
+                <p>
+                    Access to public transportation is often thought of as a binary – either you have it, or you don’t –
+                    but we know it’s more complicated than that. The number of stations and types of transportation you
+                    can use, where they take you and how fast they get you there, are what really matter.
+                </p>
+                <p>
+                    A travelshed is the geographic area that can be reached from a specific point, within a specific
+                    period of time. For example, a travelshed can show which job centers a resident from a particular
+                    neighborhood could reach within an hour-long commute.
+                </p>
+            </div>
+            <div class="col-12">
+                <h1>
+                    About the Transit Travelshed
+                </h1>
+                <p>
+                    The Department of City Planning (DCP) Transit Travelshed shows the areas a New Yorker can reach by
+                    transit within one hour. It uses schedules of various public transit services, such as the subway,
+                    to provide a measure of transit accessibility for any location in New York City.
+                </p>
+                <p>
+                    For example, it can demonstrate how connected a neighborhood is to jobs, or how much commuting time
+                    a proposed transit improvement could save.
+                </p>
+                <p>
+                    Pick a Census tract in New York City in the next two tabs to see your transit
+                    travelshed. View the <b><a href="from.html">Transit Travelshed FROM a Census Tract</a></b> to see
+                    how many jobs can be accessed from the selected Census tract within 10-minute travel increments. The
+                    <b><a href="to.html">Transit Travelshed TO a Census Tract</a></b> shows the total population and
+                    number of workers who can travel to the selected Census tract by transit within 10-minute travel
+                    increments. Click on the <b><a href="tti.html">Transit Travelshed Index</a></b> tab to find out how
+                    Census Tracts across the city vary in different indices.
+                </p>
+            </div>
+            <div class="col-12">
+                <h1>
+                    Methodology
+                </h1>
+                <p>
+                    The Transit Travelshed is developed through the open-source software OpenTripPlanner, with an input
+                    of General Transit Feed Specification schedule data published by 31 major transit operating agencies
+                    in the region. The model includes major public transit modes by which people get around the New York
+                    City metropolitan region, such as subway, bus, rail and ferry.
+                </p>
+                <p>
+                    Click <b><a href="https://github.com/NYCPlanning/td-travelshed/blob/master/Transit%20Travelshed.pdf"
+                            target="_blank">HERE</a></b> for more detailed methodology.
+                </p>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

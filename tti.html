@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NYC DCP Transit Travelshed</title>
+
+    <script src="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v1.12.0/mapbox-gl.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-b5kHyXgcpbZJO/tY9Ul7kGkf1S0CWuKcCD38l8YkeH8z8QjE0GmW1gYU5S9FOnJ0"
+        crossorigin="anonymous"></script>
+
+
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+        }
+
+        #banner {
+            background-color: rgba(217, 107, 39, 1);
+            z-index: 1000;
+        }
+
+        #dcplogo {
+            height: 2rem;
+        }
+
+        .navbar-brand {
+            margin-left: 1rem;
+            margin-right: 1rem;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .navbar-toggler {
+            border-width: 0.2rem;
+            padding: 0.1rem;
+            margin-right: 1rem;
+        }
+
+        .nav-link {
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 0.5rem 0.5rem 0.5rem 0.5rem;
+            margin-left: 0.5rem;
+            margin-right: 0.5rem;
+        }
+
+        #mainmap {
+            position: absolute;
+            top: 4rem;
+            bottom: 0;
+            width: 100%;
+            height: auto;
+            z-index: -1000;
+        }
+
+        #legend {
+            position: absolute;
+            top: 5rem;
+            right: 1rem;
+            width: auto;
+            height: auto;
+            max-height: 90%;
+            padding-top: 0rem;
+            padding-right: 1rem;
+            padding-left: 1rem;
+            padding-bottom: 0rem;
+            color: rgba(0, 0, 0, 0.9);
+            background-color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+            overflow: auto;
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        .row {
+            margin-top: 1rem;
+        }
+
+        #header {
+            font-weight: bold;
+        }
+
+        .form-select {
+            font-size: 0.9rem;
+        }
+
+        #colorbar {
+            width: 15rem;
+        }
+
+        .btn {
+            background-color: rgba(217, 107, 39, 0.9);
+            border-style: none;
+            margin-bottom: 1rem;
+            width: 8rem;
+        }
+
+        .btn:hover {
+            background-color: rgba(217, 107, 39, 1);
+        }
+
+        .btn:focus {
+            background-color: rgba(217, 107, 39, 1);
+        }
+
+        .btn:active {
+            background-color: rgba(217, 107, 39, 1);
+        }
+    </style>
+</head>
+
+
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark g-0 p-0 m-0" id="banner">
+        <a class="navbar-brand p-0" href="http://www1.nyc.gov/site/planning/index.page">
+            <img src="https://raw.githubusercontent.com/NYCPlanning/dcp-logo/master/dcp_logo_white_772.png"
+                id="dcplogo">
+            <sup> Beta </sup>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#bannertoggle">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse p-0 justify-content-start" id="bannertoggle">
+            <ul class="navbar-nav p-0">
+                <a class="nav-link" href="index.html">
+                    Home </a>
+                <a class="nav-link" href="from.html">
+                    Transit Travelshed FROM a Census Tract </a>
+                <a class="nav-link" href="to.html">
+                    Transit Travelshed TO a Census Tract </a>
+                <a class="nav-link active" href="tti.html">
+                    Transit Travelshed Index </a>
+            </ul>
+        </div>
+    </nav>
+
+
+    <div class="container-fluid p-0" id="mainmap"> </div> <!-- placeholder for main map -->
+
+    <div id="legend">
+        <div class="container g-0">
+            <div class="row g-0 justify-content-start">
+                <div class="col-auto" id="header"> Transit Travelshed Index </div>
+            </div>
+            <div class="row g-0 justify-content-center">
+                <div class="col-12">
+                    <select class='form-select' id='tti'>
+                        <option value='pop'> Access to Population </option>
+                        <option value='job'> Access to Jobs </option>
+                        <option value='lab'> Access to Labor Force </option>
+                    </select>
+                </div>
+            </div>
+            <div class="row g-0 justify-content-center">
+                <hr>
+                <div class="col-12">
+                    <img src="colorbar.png" id="colorbar">
+                </div>
+            </div>
+            <div class="row g-0 justify-content-center">
+                <hr>
+                <div class="col-auto">
+                    <a class="btn btn-primary btn-sm" id="exp"
+                        href="https://raw.githubusercontent.com/NYCPlanning/td-travelshed/master/mapbox/tti.geojson"
+                        target="blank">
+                        Export
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+
+    <script>
+        'use strict';
+        // Set MapBox token
+        mapboxgl.accessToken = 'pk.eyJ1Ijoia2trZGRkZXIiLCJhIjoiY205aGJ0bDRpMDQwZTJqcG1sZHN3Y2VjeCJ9.XjHUoaqF_nmAN_SsXvswVw'; // still need to find a way to store the token
+
+
+
+        // Initialize the map
+        var map = new mapboxgl.Map({ // creating a new map
+            container: 'mainmap', // same as the div id to place the map
+            style: 'mapbox://styles/mapbox/light-v10', // light base map
+            hash: true, // make sure it's on to get the url with map view
+            attributionControl: true, // show the credit bar
+            customAttribution: '<b><a href="https://github.com/NYCPlanning/td-travelshed/blob/master/Transit%20Travelshed.pdf" target="_blank">Detailed Methodology</a></b>', // add overall credit to the beggining
+            preserveDrawingBuffer: true, // make sure it's on to allow printing
+            center: [-73.9469, 40.7121], // testing to get the centroid of bounds
+            zoom: 9.5, // set the initial zoom of the map view
+        });
+
+
+
+        // Add layers
+        map.on('load', function () {
+
+            // Add full screen control
+            map.addControl(new mapboxgl.FullscreenControl({
+                container: document.querySelector('body'),
+            }),
+                'bottom-left', // control position
+            );
+
+            // Add navigation control
+            map.addControl(new mapboxgl.NavigationControl({
+                showCompass: true, // show compass
+                showZoom: true, // show zoom
+                visualizePitch: true, // show pitch
+            }),
+                'bottom-left', // control position
+            );
+
+
+
+
+
+            // Add access to population
+            // Set layer contents
+            var layerContent = {
+                'sourceid': 'pop', // source id
+                'sourcetype': 'geojson', // source type
+                'sourcedata': 'https://raw.githubusercontent.com/NYCPlanning/td-travelshed/master/mapbox/tti.geojson', // data source
+                'layerid': 'pop', // layer id
+                'layertype': 'fill', // symbology type
+                'layername': 'Access to Population', // layer name for the legend
+                'layervisibility': 'visible', // visibility of the layer
+                'layercolname': 'popcat', // category column name
+                'layercat': ['<-2.5SD', '-2.5SD ~ -1.5SD', '-1.5SD ~ -0.5SD', '-0.5SD ~ +0.5SD', '+0.5SD ~ +1.5SD', '+1.5SD ~ +2.5SD', '>=+2.5SD'], // categories
+                'layercolor': ['rgba(43, 131, 186, 0.8)', 'rgba(128, 191, 172, 0.8)', 'rgba(199, 233, 173, 0.8)', 'rgba(255, 255, 191, 0.8)', 'rgba(254, 201, 128, 0.8)', 'rgba(241, 124, 74, 0.8)', 'rgba(215, 25, 28, 0.8)'], // fill color; use rgba
+                'layeroutlinecolor': 'rgba(0, 0, 0, 0.1)', // outline color; can only be set to 1px width; to change the outline width, add another line layer
+            };
+
+            // Generate layer colors
+            var layerColor = ['match', ['get', layerContent['layercolname']]];
+            for (var i = 0; i < layerContent.layercat.length; i++) {
+                layerColor.push(layerContent.layercat[i]);
+                layerColor.push(layerContent.layercolor[i]);
+            };
+            layerColor.push('#000000');
+
+            // Add data source
+            map.addSource(layerContent['sourceid'], {
+                'type': layerContent['sourcetype'],
+                'data': layerContent['sourcedata'],
+            });
+
+            // Add fill layer
+            map.addLayer({
+                'id': layerContent['layerid'],
+                'type': layerContent['layertype'],
+                'source': layerContent['sourceid'],
+                'layout': {
+                    'visibility': layerContent['layervisibility'],
+                },
+                'paint': {
+                    'fill-color': layerColor,
+                    'fill-outline-color': layerContent['layeroutlinecolor'],
+                },
+            });
+
+
+
+            // Add access to jobs
+            // Set layer contents
+            var layerContent = {
+                'sourceid': 'job', // source id
+                'sourcetype': 'geojson', // source type
+                'sourcedata': 'https://raw.githubusercontent.com/NYCPlanning/td-travelshed/master/mapbox/tti.geojson', // data source
+                'layerid': 'job', // layer id
+                'layertype': 'fill', // symbology type
+                'layername': 'Access to Jobs', // layer name for the legend
+                'layervisibility': 'none', // visibility of the layer
+                'layercolname': 'jobcat', // category column name
+                'layercat': ['<-2.5SD', '-2.5SD ~ -1.5SD', '-1.5SD ~ -0.5SD', '-0.5SD ~ +0.5SD', '+0.5SD ~ +1.5SD', '+1.5SD ~ +2.5SD', '>=+2.5SD'], // categories
+                'layercolor': ['rgba(43, 131, 186, 0.8)', 'rgba(128, 191, 172, 0.8)', 'rgba(199, 233, 173, 0.8)', 'rgba(255, 255, 191, 0.8)', 'rgba(254, 201, 128, 0.8)', 'rgba(241, 124, 74, 0.8)', 'rgba(215, 25, 28, 0.8)'], // fill color; use rgba
+                'layeroutlinecolor': 'rgba(0, 0, 0, 0.1)', // outline color; can only be set to 1px width; to change the outline width, add another line layer
+            };
+
+            // Generate layer colors
+            var layerColor = ['match', ['get', layerContent['layercolname']]];
+            for (var i = 0; i < layerContent.layercat.length; i++) {
+                layerColor.push(layerContent.layercat[i]);
+                layerColor.push(layerContent.layercolor[i]);
+            };
+            layerColor.push('#000000');
+
+            // Add data source
+            map.addSource(layerContent['sourceid'], {
+                'type': layerContent['sourcetype'],
+                'data': layerContent['sourcedata'],
+            });
+
+            // Add fill layer
+            map.addLayer({
+                'id': layerContent['layerid'],
+                'type': layerContent['layertype'],
+                'source': layerContent['sourceid'],
+                'layout': {
+                    'visibility': layerContent['layervisibility'],
+                },
+                'paint': {
+                    'fill-color': layerColor,
+                    'fill-outline-color': layerContent['layeroutlinecolor'],
+                },
+            });
+
+
+
+            // Add access to labor force
+            // Set layer contents
+            var layerContent = {
+                'sourceid': 'lab', // source id
+                'sourcetype': 'geojson', // source type
+                'sourcedata': 'https://raw.githubusercontent.com/NYCPlanning/td-travelshed/master/mapbox/tti.geojson', // data source
+                'layerid': 'lab', // layer id
+                'layertype': 'fill', // symbology type
+                'layername': 'Access to Labor Force', // layer name for the legend
+                'layervisibility': 'none', // visibility of the layer
+                'layercolname': 'labcat', // category column name
+                'layercat': ['<-2.5SD', '-2.5SD ~ -1.5SD', '-1.5SD ~ -0.5SD', '-0.5SD ~ +0.5SD', '+0.5SD ~ +1.5SD', '+1.5SD ~ +2.5SD', '>=+2.5SD'], // categories
+                'layercolor': ['rgba(43, 131, 186, 0.8)', 'rgba(128, 191, 172, 0.8)', 'rgba(199, 233, 173, 0.8)', 'rgba(255, 255, 191, 0.8)', 'rgba(254, 201, 128, 0.8)', 'rgba(241, 124, 74, 0.8)', 'rgba(215, 25, 28, 0.8)'], // fill color; use rgba
+                'layeroutlinecolor': 'rgba(0, 0, 0, 0.1)', // outline color; can only be set to 1px width; to change the outline width, add another line layer
+            };
+
+            // Generate layer colors
+            var layerColor = ['match', ['get', layerContent['layercolname']]];
+            for (var i = 0; i < layerContent.layercat.length; i++) {
+                layerColor.push(layerContent.layercat[i]);
+                layerColor.push(layerContent.layercolor[i]);
+            };
+            layerColor.push('#000000');
+
+            // Add data source
+            map.addSource(layerContent['sourceid'], {
+                'type': layerContent['sourcetype'],
+                'data': layerContent['sourcedata'],
+            });
+
+            // Add fill layer
+            map.addLayer({
+                'id': layerContent['layerid'],
+                'type': layerContent['layertype'],
+                'source': layerContent['sourceid'],
+                'layout': {
+                    'visibility': layerContent['layervisibility'],
+                },
+                'paint': {
+                    'fill-color': layerColor,
+                    'fill-outline-color': layerContent['layeroutlinecolor'],
+                },
+            });
+
+
+
+            // Add Subway Line
+            // Set layer contents
+            var layerContent = {
+                'sourceid': 'subwayline', // source id
+                'sourcetype': 'geojson', // source type
+                'sourcedata': 'https://raw.githubusercontent.com/NYCPlanning/td-travelshed/master/mapbox/subwayline.geojson', // data source
+                'layerid': 'subwayline', // layer id
+                'layertype': 'line', // symbology type
+                'layername': 'Subway Line', // layer name for the legend
+                'layerlinecap': 'round', // line endings; butt/round/square
+                'layerlinejoin': 'round', // line joining; bevel/round/miter
+                'layervisibility': 'visible', // visibility of the layer
+                'layercolor': 'rgba(150, 150, 150, 1)', // color for each category; use rgba
+                'layerwidth': 1, // line width
+            };
+
+            // Add data source
+            map.addSource(layerContent['sourceid'], {
+                'type': layerContent['sourcetype'],
+                'data': layerContent['sourcedata'],
+            });
+
+            // Add fill layer
+            map.addLayer({
+                'id': layerContent['layerid'],
+                'type': layerContent['layertype'],
+                'source': layerContent['sourceid'],
+                'layout': {
+                    'line-cap': layerContent['layerlinecap'],
+                    'line-join': layerContent['layerlinejoin'],
+                    'visibility': layerContent['layervisibility'],
+                },
+                'paint': {
+                    'line-color': layerContent['layercolor'],
+                    'line-width': layerContent['layerwidth'],
+                },
+            });
+
+
+
+            // Add NYC Tract Label
+            // Set layer contents
+            var q = "https://dcptransportation.carto.com/api/v2/sql?q=";
+            q += "SELECT * FROM dcptransportation.nycct";
+            q += "&format=GeoJSON&api_key=W0RW6ZjV-MZRBA1RJdxqqw"; // Carto API
+            var layerContent = {
+                'sourceid': 'nycct', // source id
+                'sourcetype': 'geojson', // source type
+                'sourcedata': q, // data source
+                'layerid': 'nycct-label', // layer id
+                'layertype': 'symbol', // symbology type
+                'layername': 'NYC Tract Label', // layer name for the legend
+                'layervisibility': 'visible', // visibility of the layer
+                'layerfield': ['get', 'label'], // categories
+                'layeroverlap': false,
+                'layeranchor': 'center',
+                'layersize': 12,
+                'layercolor': 'rgba(0, 0, 0, 0.8)', // color for each category; use rgba
+            };
+
+            // Add data source
+            map.addSource(layerContent['sourceid'], {
+                'type': layerContent['sourcetype'],
+                'data': layerContent['sourcedata'],
+            });
+
+            // Add label layer
+            map.addLayer({
+                'id': layerContent['layerid'],
+                'type': layerContent['layertype'],
+                'source': layerContent['sourceid'],
+                'minzoom': 12,
+                'layout': {
+                    'visibility': layerContent['layervisibility'],
+                    'text-field': layerContent['layerfield'],
+                    'text-size': layerContent['layersize'],
+                    'text-allow-overlap': layerContent['layeroverlap'],
+                    'text-anchor': layerContent['layeranchor'],
+                },
+                'paint': {
+                    'text-color': layerContent['layercolor'],
+                },
+            });
+
+
+
+
+
+            // Add popup
+            var popup = new mapboxgl.Popup({
+                closeButton: true, // close button
+                closeOnClick: false, // close if click on map
+                closeOnMove: false, // close if move the map
+                anchor: 'bottom', // anchor of the popup
+                offset: 0, // offset from the feature
+                maxWidth: 'none', // max width of the popoup; 'none' to fit to the content              
+            });
+
+            // Add access to population popup
+            // Add click event
+            map.on('click', 'pop', function (e) {
+                var coordinates = e.lngLat; // get pointer coordinates
+                var description = "<b>Census Tract: </b><span>" + e.features[0].properties.tractid + "</span><br>"; // description in the popup
+                description += "<b>Access to Population Index: </b><span>" + e.features[0].properties.popindex.toFixed(0) + "</span><br>";
+                description += "<b>Standard Deviation from Average: </b><span>" + e.features[0].properties.popstd.toFixed(2) + "</span><br>";
+                description += "<b>Percentile: </b><span>" + e.features[0].properties.poppct + "%</span><br>";
+                popup.setLngLat(coordinates).setHTML(description).addTo(map); //add popup
+            });
+            // Add hover events
+            map.on('mouseenter', 'pop', function () {
+                map.getCanvas().style.cursor = 'pointer'; // mouse becoming pointer
+            });
+            map.on('mouseleave', 'pop', function () {
+                map.getCanvas().style.cursor = '';
+            });
+
+            // Add access to jobs popup
+            // Add click event
+            map.on('click', 'job', function (e) {
+                var coordinates = e.lngLat; // get pointer coordinates
+                var description = "<b>Census Tract: </b><span>" + e.features[0].properties.tractid + "</span><br>"; // description in the popup
+                description += "<b>Access to Jobs Index: </b><span>" + e.features[0].properties.jobindex.toFixed(0) + "</span><br>";
+                description += "<b>Standard Deviation from Average: </b><span>" + e.features[0].properties.jobstd.toFixed(2) + "</span><br>";
+                description += "<b>Percentile: </b><span>" + e.features[0].properties.jobpct + "%</span><br>";
+                popup.setLngLat(coordinates).setHTML(description).addTo(map); //add popup
+            });
+            // Add hover events
+            map.on('mouseenter', 'job', function () {
+                map.getCanvas().style.cursor = 'pointer'; // mouse becoming pointer
+            });
+            map.on('mouseleave', 'job', function () {
+                map.getCanvas().style.cursor = '';
+            });
+
+            // Add access to labor force popup
+            // Add click event
+            map.on('click', 'lab', function (e) {
+                var coordinates = e.lngLat; // get pointer coordinates
+                var description = "<b>Census Tract: </b><span>" + e.features[0].properties.tractid + "</span><br>"; // description in the popup
+                description += "<b>Access to Labor Force Index: </b><span>" + e.features[0].properties.labindex.toFixed(0) + "</span><br>";
+                description += "<b>Standard Deviation from Average: </b><span>" + e.features[0].properties.labstd.toFixed(2) + "</span><br>";
+                description += "<b>Percentile: </b><span>" + e.features[0].properties.labpct + "%</span><br>";
+                popup.setLngLat(coordinates).setHTML(description).addTo(map); //add popup
+            });
+            // Add hover events
+            map.on('mouseenter', 'lab', function () {
+                map.getCanvas().style.cursor = 'pointer'; // mouse becoming pointer
+            });
+            map.on('mouseleave', 'lab', function () {
+                map.getCanvas().style.cursor = '';
+            });
+
+
+
+            // Create click event
+            var layerOrder = ['pop', 'job', 'lab']; // set layer order in the legend
+            tti.addEventListener('change', function () {
+                var chosenLayer = document.getElementById('tti').value;
+                map.setLayoutProperty(chosenLayer, 'visibility', 'visible'); // set layer visibility
+                document.getElementById('exp').href = map.getSource(chosenLayer)._data;
+                var unchosenLayer = layerOrder.filter(function (x) { return x !== chosenLayer; });
+                for (var i = 0; i < unchosenLayer.length; i++) {
+                    map.setLayoutProperty(unchosenLayer[i], 'visibility', 'none'); // set layer visibility
+                };
+            });
+        });
+    </script>
+
+</body>
+
+</html>
