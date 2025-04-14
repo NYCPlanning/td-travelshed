@@ -17,8 +17,7 @@ jobs:
         run: |
           cp mapbox/public/config.template.json mapbox/public/config.json
           ENCODED_TOKEN=$(echo -n "$MAPBOX_TOKEN" | base64)
-          sed -i "s|\${MAPBOX_TOKEN}|$ENCODED_TOKEN|g" mapbox/public/config.json
-
+          sed -i "s|\${MAPBOX_TOKEN}|${ENCODED_TOKEN}|g" mapbox/public/config.json
 
       - name: Commit and push changes
         uses: EndBug/add-and-commit@v9
