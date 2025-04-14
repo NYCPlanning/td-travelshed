@@ -1,0 +1,38 @@
+name: Rotate Mapbox Token
+
+on:
+  workflow_dispatch:  # Manual trigger
+  schedule:
+    - cron: '0 0 1 * *'  # Runs on the 1st of each month
+
+jobs:
+  rotate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create new Mapbox token
+        id: create_token
+        run: |
+          RESPONSE=$(curl -s -X POST "https://api.mapbox.com/tokens/v2?access_token=${{ secrets.MAPBOX_MANAGEMENT_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "note": "Auto-rotated token for nycplanning.github.io",
+            "scopes": ["styles:read", "tiles:read"],
+            "allowed_urls": ["https://nycplanning.github.io"]
+          }')
+
+          NEW_TOKEN=$(echo $RESPONSE | jq -r '.token')
+          echo "NEW_TOKEN=$NEW_TOKEN" >> $GITHUB_ENV
+
+      - name: Update config.json
+        run: |
+          echo "{\"mapboxToken\": \"$NEW_TOKEN\"}" > config.json
+
+      - name: Commit and push config.json
+        uses: EndBug/add-and-commit@v9
+        with:
+          author_name: GitHub Actions
+          author_email: actions@github.com
+          message: '🔁 Rotated Mapbox token'
+          add: 'config.json'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
