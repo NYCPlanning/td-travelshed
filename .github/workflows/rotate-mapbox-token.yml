@@ -19,7 +19,8 @@ jobs:
           cat mapbox/public/config.json
           
           # Replace the placeholder in config.json
-          sed -i "s|\${MAPBOX_TOKEN}|$MAPBOX_TOKEN|g" mapbox/public/config.json
+          ENCODED_TOKEN=$(echo -n "$MAPBOX_TOKEN" | base64)
+          sed -i "s|\${MAPBOX_TOKEN}|$ENCODED_TOKEN|g" mapbox/public/config.json
 
           echo "After replacement:"
           cat mapbox/public/config.json
