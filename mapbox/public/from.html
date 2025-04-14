@@ -268,12 +268,10 @@
         'use strict';
         // Set MapBox token
         fetch('config.json')
-          .then(response => {
-            if (!response.ok) throw new Error('Config not found');
-            return response.json();
-          })
-          .then(config => {
-            mapboxgl.accessToken = config.mapboxToken;
+            .then((response) => response.json())
+            .then((config) => {
+                const decodedToken = atob(config.token); // base64 decode
+                mapboxgl.accessToken = decodedToken;
         
             var map = new mapboxgl.Map({ // creating a new map
                 container: 'mainmap', // same as the div id to place the map
