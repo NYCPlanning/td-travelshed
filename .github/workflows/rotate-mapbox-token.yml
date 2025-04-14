@@ -11,10 +11,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set new token (simulate rotation)
+      - name: Set new token from GitHub Secret
+        env:
+          NEW_TOKEN: ${{ secrets.MAPBOX_MANAGEMENT_TOKEN }}
         run: |
-          NEW_TOKEN="pk.simulated-new-token-for-testing"
-          echo "Replacing token in mapbox/public/config.json with $NEW_TOKEN"
+          echo "Replacing token in mapbox/public/config.json with the GitHub Secret token"
           sed -i "s/\"mapboxToken\": \".*\"/\"mapboxToken\": \"$NEW_TOKEN\"/" mapbox/public/config.json
 
       - name: Commit updated token
