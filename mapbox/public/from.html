@@ -267,7 +267,7 @@
     <script>
         'use strict';
         // Set MapBox token
-        fetch('mapbox/public/config.json')
+        fetch('config.json')
             .then(response => response.json())
             .then(config => {
                 const decodedToken = atob(config.mapboxToken);
