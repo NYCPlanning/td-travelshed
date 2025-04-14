@@ -1,3 +1,3 @@
 {
-  "mapboxToken": "sk.eyJ1Ijoia2trZGRkZXIiLCJhIjoiY205aGl2OWprMDY0cDJrcHlqZGJwbGJ6eCJ9.t1U5N-nphK-dWa6YOe8QIw"
+  "mapboxToken": "${MAPBOX_TOKEN}"
 }
