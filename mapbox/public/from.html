@@ -268,12 +268,33 @@
         'use strict';
         // Set MapBox token
         fetch('config.json')
-          .then(response => response.json())
+          .then(response => {
+            if (!response.ok) throw new Error('Config not found');
+            return response.json();
+          })
           .then(config => {
             mapboxgl.accessToken = config.mapboxToken;
+        
+            var map = new mapboxgl.Map({ // creating a new map
+                container: 'mainmap', // same as the div id to place the map
+                style: 'mapbox://styles/mapbox/light-v10', // light base map
+                hash: true, // make sure it's on to get the url with map view
+                attributionControl: true, // show the credit bar
+                customAttribution: '<b><a href="https://github.com/NYCPlanning/td-travelshed/blob/master/Transit%20Travelshed.pdf" target="_blank">Detailed Methodology</a></b>', // add overall credit to the beggining
+                preserveDrawingBuffer: true, // make sure it's on to allow printing
+                center: [-73.9469, 40.7121], // testing to get the centroid of bounds
+                zoom: 9.5, // set the initial zoom of the map view
+            });
+              
+          })
+          .catch(err => {
+            console.error('Failed to load config:', err);
+          });
+        
         // mapboxgl.accessToken = 'pk.eyJ1Ijoia2trZGRkZXIiLCJhIjoiY205aGJ0bDRpMDQwZTJqcG1sZHN3Y2VjeCJ9.XjHUoaqF_nmAN_SsXvswVw'; // still need to find a way to store the token
 
         // Initialize the map
+        /*
         var map = new mapboxgl.Map({ // creating a new map
             container: 'mainmap', // same as the div id to place the map
             style: 'mapbox://styles/mapbox/light-v10', // light base map
@@ -283,7 +304,7 @@
             preserveDrawingBuffer: true, // make sure it's on to allow printing
             center: [-73.9469, 40.7121], // testing to get the centroid of bounds
             zoom: 9.5, // set the initial zoom of the map view
-        });
+        }); */
 
 
 
