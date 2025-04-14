@@ -11,19 +11,14 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Replace MAPBOX_TOKEN in config.json
+      - name: Replace token in config.json with base64-encoded secret
         env:
           MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
         run: |
-          echo "Before replacement:"
-          cat mapbox/public/config.json
-          
-          # Replace the placeholder in config.json
+          cp mapbox/public/config.template.json mapbox/public/config.json
           ENCODED_TOKEN=$(echo -n "$MAPBOX_TOKEN" | base64)
           sed -i "s|\${MAPBOX_TOKEN}|$ENCODED_TOKEN|g" mapbox/public/config.json
 
-          echo "After replacement:"
-          cat mapbox/public/config.json
 
       - name: Commit and push changes
         uses: EndBug/add-and-commit@v9
