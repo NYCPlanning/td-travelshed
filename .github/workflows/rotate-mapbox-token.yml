@@ -6,33 +6,28 @@ on:
     - cron: '0 0 1 * *'  # Runs on the 1st of each month
 
 jobs:
-  rotate:
+  rotate-token:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Create new Mapbox token
-        id: create_token
+      - name: Checkout repository
+        uses: actions/checkout@v3  # This step clones your repo
+
+      - name: Fetch new Mapbox token
+        id: fetch_token
         run: |
-          RESPONSE=$(curl -s -X POST "https://api.mapbox.com/tokens/v2?access_token=${{ secrets.MAPBOX_MANAGEMENT_TOKEN }}" \
-          -H "Content-Type: application/json" \
-          -d '{
-            "note": "Auto-rotated token for nycplanning.github.io",
-            "scopes": ["styles:read", "tiles:read"],
-            "allowed_urls": ["https://nycplanning.github.io"]
-          }')
+          echo "Simulating token fetch"
+          NEW_TOKEN="pk.simulated-new-token-for-testing"
+          echo "::set-output name=token::$NEW_TOKEN"
 
-          NEW_TOKEN=$(echo $RESPONSE | jq -r '.token')
-          echo "NEW_TOKEN=$NEW_TOKEN" >> $GITHUB_ENV
-
-      - name: Update config.json
+      - name: Update Mapbox token file
         run: |
-          echo "{\"mapboxToken\": \"$NEW_TOKEN\"}" > config.json
+          echo "${{ steps.fetch_token.outputs.token }}" > src/config/mapbox-token.txt
 
-      - name: Commit and push config.json
+      - name: Commit updated token
         uses: EndBug/add-and-commit@v9
         with:
-          author_name: GitHub Actions
-          author_email: actions@github.com
-          message: '🔁 Rotated Mapbox token'
-          add: 'config.json'
+          add: 'src/config/mapbox-token.txt'
+          message: 'Rotated Mapbox token'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
