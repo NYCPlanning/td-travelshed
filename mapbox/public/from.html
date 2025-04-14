@@ -267,8 +267,11 @@
     <script>
         'use strict';
         // Set MapBox token
-        
-        mapboxgl.accessToken = 'pk.eyJ1Ijoia2trZGRkZXIiLCJhIjoiY205aGJ0bDRpMDQwZTJqcG1sZHN3Y2VjeCJ9.XjHUoaqF_nmAN_SsXvswVw'; // still need to find a way to store the token
+        fetch('config.json')
+          .then(response => response.json())
+          .then(config => {
+            mapboxgl.accessToken = config.mapboxToken;
+        // mapboxgl.accessToken = 'pk.eyJ1Ijoia2trZGRkZXIiLCJhIjoiY205aGJ0bDRpMDQwZTJqcG1sZHN3Y2VjeCJ9.XjHUoaqF_nmAN_SsXvswVw'; // still need to find a way to store the token
 
         // Initialize the map
         var map = new mapboxgl.Map({ // creating a new map
