@@ -22,7 +22,9 @@ jobs:
 
       - name: Update Mapbox token file
         run: |
-          echo "${{ steps.fetch_token.outputs.token }}" > src/config/mapbox-token.txt
+          NEW_TOKEN="pk.simulated-new-token-for-testing"
+          jq --arg token "$NEW_TOKEN" '.mapboxToken = $token' config.json > config.tmp.json && mv config.tmp.json config.json
+
 
       - name: Commit updated token
         uses: EndBug/add-and-commit@v9
