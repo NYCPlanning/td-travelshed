@@ -1,25 +1,41 @@
-name: Rotate Mapbox Token
+name: Build and Deploy to GitHub Pages
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write  # Needed to push to gh-pages
 
 jobs:
-  rotate-token:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Set new token from GitHub Secret
-        env:
-          NEW_TOKEN: ${{ secrets.MAPBOX_MANAGEMENT_TOKEN }}
-        run: |
-          echo "Replacing token in mapbox/public/config.json with the GitHub Secret token"
-          sed -i "s/\"mapboxToken\": \".*\"/\"mapboxToken\": \"$NEW_TOKEN\"/" mapbox/public/config.json
-
-      - name: Commit updated token
-        uses: EndBug/add-and-commit@v9
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          message: "Rotated Mapbox token"
-          add: "mapbox/public/config.json"
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Inject Mapbox token into config.json
+        env:
+          MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
+        run: |
+          sed -i "s|\${MAPBOX_TOKEN}|$MAPBOX_TOKEN|" mapbox/public/config.json
+
+      - name: Build site
+        run: npm run build
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist  # Adjust if your output dir is different
