@@ -16,7 +16,7 @@ jobs:
           MAPBOX_TOKEN: ${{ secrets.MAPBOX_TOKEN }}
         run: |
           cp mapbox/public/config.template.json mapbox/public/config.json
-          ENCODED_TOKEN=$(echo -n "$MAPBOX_TOKEN" | base64)
+          ENCODED_TOKEN=$(echo -n "$MAPBOX_TOKEN" | base64 | tr -d '\n')
           jq --arg token "$ENCODED_TOKEN" 'walk(if type == "string" then gsub("\\$\\{MAPBOX_TOKEN\\}"; $token) else . end)' \
             mapbox/public/config.json > mapbox/public/config.tmp.json
           mv mapbox/public/config.tmp.json mapbox/public/config.json
