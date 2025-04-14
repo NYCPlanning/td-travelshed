@@ -1,9 +1,7 @@
 name: Rotate Mapbox Token
 
 on:
-  workflow_dispatch:  # Manual trigger
-  schedule:
-    - cron: '0 0 1 * *'  # Runs on the 1st of each month
+  workflow_dispatch:
 
 jobs:
   rotate-token:
@@ -11,25 +9,16 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3  # This step clones your repo
+        uses: actions/checkout@v4
 
-      - name: Fetch new Mapbox token
-        id: fetch_token
-        run: |
-          echo "Simulating token fetch"
-          NEW_TOKEN="pk.simulated-new-token-for-testing"
-          echo "::set-output name=token::$NEW_TOKEN"
-
-      - name: Update Mapbox token file
+      - name: Set new token (simulate rotation)
         run: |
           NEW_TOKEN="pk.simulated-new-token-for-testing"
-          jq --arg token "$NEW_TOKEN" '.mapboxToken = $token' config.json > config.tmp.json && mv config.tmp.json config.json
-
+          echo "Replacing token in mapbox/public/config.json with $NEW_TOKEN"
+          sed -i "s/\"mapboxToken\": \".*\"/\"mapboxToken\": \"$NEW_TOKEN\"/" mapbox/public/config.json
 
       - name: Commit updated token
         uses: EndBug/add-and-commit@v9
         with:
-          add: 'src/config/mapbox-token.txt'
-          message: 'Rotated Mapbox token'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          message: "Rotated Mapbox token"
+          add: "mapbox/public/config.json"
