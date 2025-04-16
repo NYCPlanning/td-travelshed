@@ -236,269 +236,275 @@
     <script>
         'use strict';
         // Set MapBox token
-        mapboxgl.accessToken = 'pk.eyJ1Ijoia2trZGRkZXIiLCJhIjoiY205aGJ0bDRpMDQwZTJqcG1sZHN3Y2VjeCJ9.XjHUoaqF_nmAN_SsXvswVw'; // still need to find a way to store the token
-
-
-
-        // Initialize the map
-        var map = new mapboxgl.Map({ // creating a new map
-            container: 'mainmap', // same as the div id to place the map
-            style: 'mapbox://styles/mapbox/light-v10', // light base map
-            hash: true, // make sure it's on to get the url with map view
-            attributionControl: true, // show the credit bar
-            customAttribution: '<b><a href="https://github.com/NYCPlanning/td-travelshed/blob/master/Transit%20Travelshed.pdf" target="_blank">Detailed Methodology</a></b>', // add overall credit to the beggining
-            preserveDrawingBuffer: true, // make sure it's on to allow printing
-            center: [-73.9469, 40.7121], // testing to get the centroid of bounds
-            zoom: 9.5, // set the initial zoom of the map view
-        });
-
-
-
-        // Add pin to the map
-        var pin = new mapboxgl.Marker({
-            draggable: true,
-            color: 'rgba(13, 110, 253, 1)',
-            scale: 0.9,
-        })
-            .setLngLat([-74.01051404065525, 40.70821675967404])
-            .addTo(map);
-
-        // Add geocoder
-        var geocoder = new MapboxGeocoder({
-            accessToken: mapboxgl.accessToken,
-            mapboxgl: mapboxgl,
-            marker: {
+        fetch('../config.json')
+            .then(response => response.json())
+            .then(config => {
+                const decodedToken = atob(config.mapboxToken);
+                mapboxgl.accessToken = decodedToken;
+        
+            // Initialize the map
+            var map = new mapboxgl.Map({ // creating a new map
+                container: 'mainmap', // same as the div id to place the map
+                style: 'mapbox://styles/mapbox/light-v10', // light base map
+                hash: true, // make sure it's on to get the url with map view
+                attributionControl: true, // show the credit bar
+                customAttribution: '<b><a href="https://github.com/NYCPlanning/td-travelshed/blob/master/Transit%20Travelshed.pdf" target="_blank">Detailed Methodology</a></b>', // add overall credit to the beggining
+                preserveDrawingBuffer: true, // make sure it's on to allow printing
+                center: [-73.9469, 40.7121], // testing to get the centroid of bounds
+                zoom: 9.5, // set the initial zoom of the map view
+            });
+    
+    
+    
+            // Add pin to the map
+            var pin = new mapboxgl.Marker({
                 draggable: true,
                 color: 'rgba(13, 110, 253, 1)',
-                scale: 0.9
-            },
-        })
-
-
-
-        // Add layers
-        map.on('load', function () {
-
-            // Add geocoder control
-            map.addControl(geocoder,
-                'top-left', // control position
-            );
-
-            geocoder.on('result', function () {
-                pin.remove();
+                scale: 0.9,
             })
-
-            geocoder.on('clear', function () {
-                pin.setLngLat([-74.01051404065525, 40.70821675967404]).addTo(map);
+                .setLngLat([-74.01051404065525, 40.70821675967404])
+                .addTo(map);
+    
+            // Add geocoder
+            var geocoder = new MapboxGeocoder({
+                accessToken: mapboxgl.accessToken,
+                mapboxgl: mapboxgl,
+                marker: {
+                    draggable: true,
+                    color: 'rgba(13, 110, 253, 1)',
+                    scale: 0.9
+                },
             })
-
-            // Add full screen control
-            map.addControl(new mapboxgl.FullscreenControl({
-                container: document.querySelector('body'),
-            }),
-                'bottom-left', // control position
-            );
-
-            // Add navigation control
-            map.addControl(new mapboxgl.NavigationControl({
-                showCompass: true, // show compass
-                showZoom: true, // show zoom
-                visualizePitch: true, // show pitch
-            }),
-                'bottom-left', // control position
-            );
-
-
-
-            // Add Subway Line
-            // Set layer contents
-            var layerContent = {
-                'sourceid': 'subwayline', // source id
-                'sourcetype': 'geojson', // source type
-                'sourcedata': 'https://raw.githubusercontent.com/NYCPlanning/td-travelshed/master/mapbox/subwayline.geojson', // data source
-                'layerid': 'subwayline', // layer id
-                'layertype': 'line', // symbology type
-                'layername': 'Subway Line', // layer name for the legend
-                'layerlinecap': 'round', // line endings; butt/round/square
-                'layerlinejoin': 'round', // line joining; bevel/round/miter
-                'layervisibility': 'visible', // visibility of the layer
-                'layercolor': 'rgba(150, 150, 150, 1)', // color for each category; use rgba
-                'layerwidth': 1, // line width
-            };
-
-            // Add data source
-            map.addSource(layerContent['sourceid'], {
-                'type': layerContent['sourcetype'],
-                'data': layerContent['sourcedata'],
-            });
-
-            // Add fill layer
-            map.addLayer({
-                'id': layerContent['layerid'],
-                'type': layerContent['layertype'],
-                'source': layerContent['sourceid'],
-                'layout': {
-                    'line-cap': layerContent['layerlinecap'],
-                    'line-join': layerContent['layerlinejoin'],
-                    'visibility': layerContent['layervisibility'],
-                },
-                'paint': {
-                    'line-color': layerContent['layercolor'],
-                    'line-width': layerContent['layerwidth'],
-                },
-            });
-        });
-
-
-
-        // Add click events
-        sbm.addEventListener('click', function () {
-            document.getElementById('sbm').innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-
-            // From point
-            if (pin._map !== undefined) {
-                var fromLat = pin.getLngLat().lat;
-                var fromLong = pin.getLngLat().lng;
-            } else {
-                var fromLat = geocoder.mapMarker.getLngLat().lat;
-                var fromLong = geocoder.mapMarker.getLngLat().lng;
-            };
-
-            // Mode
-            var modes = ['walk', 'bus', 'subway', 'rail', 'ferry', 'citibike'];
-            var selectedModes = [];
-            var selectedModesPop = [];
-            for (var i = 0; i < modes.length; ++i) {
-                if (document.getElementById(modes[i]).checked) {
-                    selectedModes.push(document.getElementById(modes[i]).value);
-                    selectedModesPop.push(document.getElementById(modes[i]).labels[0].textContent.trim());
+    
+    
+    
+            // Add layers
+            map.on('load', function () {
+    
+                // Add geocoder control
+                map.addControl(geocoder,
+                    'top-left', // control position
+                );
+    
+                geocoder.on('result', function () {
+                    pin.remove();
+                })
+    
+                geocoder.on('clear', function () {
+                    pin.setLngLat([-74.01051404065525, 40.70821675967404]).addTo(map);
+                })
+    
+                // Add full screen control
+                map.addControl(new mapboxgl.FullscreenControl({
+                    container: document.querySelector('body'),
+                }),
+                    'bottom-left', // control position
+                );
+    
+                // Add navigation control
+                map.addControl(new mapboxgl.NavigationControl({
+                    showCompass: true, // show compass
+                    showZoom: true, // show zoom
+                    visualizePitch: true, // show pitch
+                }),
+                    'bottom-left', // control position
+                );
+    
+    
+    
+                // Add Subway Line
+                // Set layer contents
+                var layerContent = {
+                    'sourceid': 'subwayline', // source id
+                    'sourcetype': 'geojson', // source type
+                    'sourcedata': 'https://raw.githubusercontent.com/NYCPlanning/td-travelshed/master/mapbox/subwayline.geojson', // data source
+                    'layerid': 'subwayline', // layer id
+                    'layertype': 'line', // symbology type
+                    'layername': 'Subway Line', // layer name for the legend
+                    'layerlinecap': 'round', // line endings; butt/round/square
+                    'layerlinejoin': 'round', // line joining; bevel/round/miter
+                    'layervisibility': 'visible', // visibility of the layer
+                    'layercolor': 'rgba(150, 150, 150, 1)', // color for each category; use rgba
+                    'layerwidth': 1, // line width
                 };
-            };
-            selectedModes = selectedModes.join(',');
-            selectedModesPop = selectedModesPop.join(', ');
-
-            // Departure time
-            var selectedTime = document.getElementById('dptt').value;
-
-            // Max travel time
-            var maxTravelTime = document.getElementById('maxttoutput').value;
-            var cutOffs = [];
-            for (var i = 0; i < maxTravelTime / 5; ++i) {
-                cutOffs.push('&cutoffSec=' + 300 * (i + 1));
-            };
-            cutOffs = cutOffs.join('');
-
-            // Generate query
-            var q = "http://159.65.64.166:8801/otp/routers/default/isochrone?batch=true";
-            q += "&date=2018/06/06&clampInitialWait=0&maxTransfers=3&maxWalkDistance=805";
-            q += "&fromPlace=" + fromLat + "," + fromLong;
-            q += "&mode=" + selectedModes;
-            q += "&time=" + selectedTime;
-            q += cutOffs;
-
-            // Remove previous isochrones
-            if (map.getLayer('isochrone')) {
-                map.removeLayer('isochrone');
-                map.removeSource('isochrone');
-            };
-
-            // Add isochrones
-            // Set layer contents
-            var layerContent = {
-                'sourceid': 'isochrone', // source id
-                'sourcetype': 'geojson', // source type
-                'sourcedata': q, // data source
-                'layerid': 'isochrone', // layer id
-                'layertype': 'fill', // symbology type
-                'layername': 'Isochrone', // layer name for the legend
-                'layervisibility': 'visible', // visibility of the layer
-                'layercolor': 'rgba(217, 107, 39, 0.2)', // color for each category; use rgba
-                'layeroutlinecolor': 'rgba(255, 255, 255, 0.1)', // outline color; can only be set to 1px width; to change the outline width, add another line layer
-            };
-
-            // Add data source
-            map.addSource(layerContent['sourceid'], {
-                'type': layerContent['sourcetype'],
-                'data': layerContent['sourcedata'],
+    
+                // Add data source
+                map.addSource(layerContent['sourceid'], {
+                    'type': layerContent['sourcetype'],
+                    'data': layerContent['sourcedata'],
+                });
+    
+                // Add fill layer
+                map.addLayer({
+                    'id': layerContent['layerid'],
+                    'type': layerContent['layertype'],
+                    'source': layerContent['sourceid'],
+                    'layout': {
+                        'line-cap': layerContent['layerlinecap'],
+                        'line-join': layerContent['layerlinejoin'],
+                        'visibility': layerContent['layervisibility'],
+                    },
+                    'paint': {
+                        'line-color': layerContent['layercolor'],
+                        'line-width': layerContent['layerwidth'],
+                    },
+                });
             });
-
-            // Add fill layer
-            map.addLayer({
-                'id': layerContent['layerid'],
-                'type': layerContent['layertype'],
-                'source': layerContent['sourceid'],
-                'layout': {
-                    'visibility': layerContent['layervisibility'],
-                },
-                'paint': {
-                    'fill-color': layerContent['layercolor'],
-                    'fill-outline-color': layerContent['layeroutlinecolor'],
-                },
-            });
-
-
-
-            //Add popup
-            var popup = new mapboxgl.Popup({
-                closeButton: false, // close button
-                closeOnClick: false, // close if click on map
-                closeOnMove: false, // close if move the map
-                anchor: 'bottom', // anchor of the popup
-                offset: 0, // offset from the feature
-                maxWidth: 'none', // max width of the popoup; 'none' to fit to the content                
-            });
-            // Add hover events
-            map.on('mousemove', 'isochrone', function (e) {
-                map.getCanvas().style.cursor = 'pointer';
-                var coordinates = e.lngLat; // get pointer coordinates
-                var description = "<b>From: </b><span>" + fromLat.toFixed(4) + ", " + fromLong.toFixed(4) + "</span><br>";
-                description += "<b>Modes: </b><span>" + selectedModesPop + "</span><br>";
-                description += "<b>Departure Time: </b><span>" + selectedTime + "</span><br>";
-                description += "<b>Travel Time: </b><span>" + (e.features[0].properties.time / 60 - 5) + "-" + e.features[0].properties.time / 60 + " mins</span><br>";
-                popup.setLngLat(coordinates).setHTML(description).addTo(map); //add popup
-            });
-            map.on('mouseleave', 'isochrone', function (e) {
-                map.getCanvas().style.cursor = '';
-                popup.remove()
-            });
-
-
-
-            //Add loading
-            map.on("render", function () {
-                if (map.loaded()) {
-                    document.getElementById('sbm').innerHTML = "Submit";
+    
+    
+    
+            // Add click events
+            sbm.addEventListener('click', function () {
+                document.getElementById('sbm').innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    
+                // From point
+                if (pin._map !== undefined) {
+                    var fromLat = pin.getLngLat().lat;
+                    var fromLong = pin.getLngLat().lng;
+                } else {
+                    var fromLat = geocoder.mapMarker.getLngLat().lat;
+                    var fromLong = geocoder.mapMarker.getLngLat().lng;
                 };
+    
+                // Mode
+                var modes = ['walk', 'bus', 'subway', 'rail', 'ferry', 'citibike'];
+                var selectedModes = [];
+                var selectedModesPop = [];
+                for (var i = 0; i < modes.length; ++i) {
+                    if (document.getElementById(modes[i]).checked) {
+                        selectedModes.push(document.getElementById(modes[i]).value);
+                        selectedModesPop.push(document.getElementById(modes[i]).labels[0].textContent.trim());
+                    };
+                };
+                selectedModes = selectedModes.join(',');
+                selectedModesPop = selectedModesPop.join(', ');
+    
+                // Departure time
+                var selectedTime = document.getElementById('dptt').value;
+    
+                // Max travel time
+                var maxTravelTime = document.getElementById('maxttoutput').value;
+                var cutOffs = [];
+                for (var i = 0; i < maxTravelTime / 5; ++i) {
+                    cutOffs.push('&cutoffSec=' + 300 * (i + 1));
+                };
+                cutOffs = cutOffs.join('');
+    
+                // Generate query
+                var q = "http://159.65.64.166:8801/otp/routers/default/isochrone?batch=true";
+                q += "&date=2018/06/06&clampInitialWait=0&maxTransfers=3&maxWalkDistance=805";
+                q += "&fromPlace=" + fromLat + "," + fromLong;
+                q += "&mode=" + selectedModes;
+                q += "&time=" + selectedTime;
+                q += cutOffs;
+    
+                // Remove previous isochrones
                 if (map.getLayer('isochrone')) {
-                    document.getElementById('exp').className = "btn btn-primary btn-sm";
-                    document.getElementById('exp').href = q;
+                    map.removeLayer('isochrone');
+                    map.removeSource('isochrone');
+                };
+    
+                // Add isochrones
+                // Set layer contents
+                var layerContent = {
+                    'sourceid': 'isochrone', // source id
+                    'sourcetype': 'geojson', // source type
+                    'sourcedata': q, // data source
+                    'layerid': 'isochrone', // layer id
+                    'layertype': 'fill', // symbology type
+                    'layername': 'Isochrone', // layer name for the legend
+                    'layervisibility': 'visible', // visibility of the layer
+                    'layercolor': 'rgba(217, 107, 39, 0.2)', // color for each category; use rgba
+                    'layeroutlinecolor': 'rgba(255, 255, 255, 0.1)', // outline color; can only be set to 1px width; to change the outline width, add another line layer
+                };
+    
+                // Add data source
+                map.addSource(layerContent['sourceid'], {
+                    'type': layerContent['sourcetype'],
+                    'data': layerContent['sourcedata'],
+                });
+    
+                // Add fill layer
+                map.addLayer({
+                    'id': layerContent['layerid'],
+                    'type': layerContent['layertype'],
+                    'source': layerContent['sourceid'],
+                    'layout': {
+                        'visibility': layerContent['layervisibility'],
+                    },
+                    'paint': {
+                        'fill-color': layerContent['layercolor'],
+                        'fill-outline-color': layerContent['layeroutlinecolor'],
+                    },
+                });
+    
+    
+    
+                //Add popup
+                var popup = new mapboxgl.Popup({
+                    closeButton: false, // close button
+                    closeOnClick: false, // close if click on map
+                    closeOnMove: false, // close if move the map
+                    anchor: 'bottom', // anchor of the popup
+                    offset: 0, // offset from the feature
+                    maxWidth: 'none', // max width of the popoup; 'none' to fit to the content                
+                });
+                // Add hover events
+                map.on('mousemove', 'isochrone', function (e) {
+                    map.getCanvas().style.cursor = 'pointer';
+                    var coordinates = e.lngLat; // get pointer coordinates
+                    var description = "<b>From: </b><span>" + fromLat.toFixed(4) + ", " + fromLong.toFixed(4) + "</span><br>";
+                    description += "<b>Modes: </b><span>" + selectedModesPop + "</span><br>";
+                    description += "<b>Departure Time: </b><span>" + selectedTime + "</span><br>";
+                    description += "<b>Travel Time: </b><span>" + (e.features[0].properties.time / 60 - 5) + "-" + e.features[0].properties.time / 60 + " mins</span><br>";
+                    popup.setLngLat(coordinates).setHTML(description).addTo(map); //add popup
+                });
+                map.on('mouseleave', 'isochrone', function (e) {
+                    map.getCanvas().style.cursor = '';
+                    popup.remove()
+                });
+    
+    
+    
+                //Add loading
+                map.on("render", function () {
+                    if (map.loaded()) {
+                        document.getElementById('sbm').innerHTML = "Submit";
+                    };
+                    if (map.getLayer('isochrone')) {
+                        document.getElementById('exp').className = "btn btn-primary btn-sm";
+                        document.getElementById('exp').href = q;
+                    };
+                });
+            });
+    
+    
+    
+    
+    
+            // Add reset event
+            rst.addEventListener('click', function () {
+                pin.setLngLat([-74.01051404065525, 40.70821675967404]).addTo(map);
+                geocoder.clear();
+                document.getElementById('bus').checked = true;
+                document.getElementById('subway').checked = true;
+                document.getElementById('rail').checked = true;
+                document.getElementById('ferry').checked = true;
+                document.getElementById('citibike').checked = false;
+                document.getElementById('dptt').value = "08:00";
+                document.getElementById('maxttinput').value = 30;
+                document.getElementById('maxttoutput').value = 30;
+                document.getElementById('exp').className = "btn btn-primary btn-sm disabled";
+                // Remove previous isochrones
+                if (map.getLayer('isochrone')) {
+                    map.removeLayer('isochrone');
+                    map.removeSource('isochrone');
                 };
             });
-        });
-
-
-
-
-
-        // Add reset event
-        rst.addEventListener('click', function () {
-            pin.setLngLat([-74.01051404065525, 40.70821675967404]).addTo(map);
-            geocoder.clear();
-            document.getElementById('bus').checked = true;
-            document.getElementById('subway').checked = true;
-            document.getElementById('rail').checked = true;
-            document.getElementById('ferry').checked = true;
-            document.getElementById('citibike').checked = false;
-            document.getElementById('dptt').value = "08:00";
-            document.getElementById('maxttinput').value = 30;
-            document.getElementById('maxttoutput').value = 30;
-            document.getElementById('exp').className = "btn btn-primary btn-sm disabled";
-            // Remove previous isochrones
-            if (map.getLayer('isochrone')) {
-                map.removeLayer('isochrone');
-                map.removeSource('isochrone');
-            };
-        });
+           })
+          .catch(err => {
+            console.error('Failed to load config:', err);
+          });
     </script>
 
 </body>
