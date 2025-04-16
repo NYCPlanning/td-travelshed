@@ -271,364 +271,438 @@
     <script>
         'use strict';
         // Set MapBox token
-        mapboxgl.accessToken = 'pk.eyJ1Ijoia2trZGRkZXIiLCJhIjoiY205aGJ0bDRpMDQwZTJqcG1sZHN3Y2VjeCJ9.XjHUoaqF_nmAN_SsXvswVw'; // still need to find a way to store the token
-
-
-
-        // Initialize the map
-        var map = new mapboxgl.Map({ // creating a new map
-            container: 'mainmap', // same as the div id to place the map
-            style: 'mapbox://styles/mapbox/light-v10', // light base map
-            hash: true, // make sure it's on to get the url with map view
-            attributionControl: true, // show the credit bar
-            customAttribution: '<b><a href="https://github.com/NYCPlanning/td-travelshed/blob/master/Transit%20Travelshed.pdf" target="_blank">Detailed Methodology</a></b>', // add overall credit to the beggining
-            preserveDrawingBuffer: true, // make sure it's on to allow printing
-            center: [-73.9469, 40.7121], // testing to get the centroid of bounds
-            zoom: 9.5, // set the initial zoom of the map view
-        });
-
-
-
-        // Add layers
-        map.on('load', function () {
-
-            // Add geocoder control
-            map.addControl(new MapboxGeocoder({
-                accessToken: mapboxgl.accessToken,
-                mapboxgl: mapboxgl
-            }),
-                'top-left', // control position
-            );
-
-            // Add full screen control
-            map.addControl(new mapboxgl.FullscreenControl({
-                container: document.querySelector('body'),
-            }),
-                'bottom-left', // control position
-            );
-
-            // Add navigation control
-            map.addControl(new mapboxgl.NavigationControl({
-                showCompass: true, // show compass
-                showZoom: true, // show zoom
-                visualizePitch: true, // show pitch
-            }),
-                'bottom-left', // control position
-            );
-
-
-
-            var sl = '';
-            var bm = '';
-
-
-
-            // Add Travelshed
-            // Set layer contents
-            var q = "https://dcptransportation.carto.com/api/v2/sql?q=";
-            q += "WITH resct AS (SELECT cartodb_id, worktractid, time FROM dcptransportation.resct WHERE restractid='";
-            q += sl;
-            q += "') SELECT quadstatectclipped.*, resct.time, "
-            q += "CASE WHEN time <=10 THEN '1-10' WHEN time>10 AND time<=20 THEN '11-20' WHEN time>20 AND time<=30 THEN '21-30' WHEN time>30 AND time<=40 THEN '31-40' WHEN time>40 AND time<=50 THEN '41-50' ELSE '51-60' END AS cat "
-            q += "FROM dcptransportation.quadstatectclipped INNER JOIN resct ON tractid=worktractid";
-            q += "&format=GeoJSON&api_key=W0RW6ZjV-MZRBA1RJdxqqw"; // Carto API
-            var layerContent = {
-                'sourceid': 'resct', // source id
-                'sourcetype': 'geojson', // source type
-                'sourcedata': q, // data source
-                'layerid': 'resct', // layer id
-                'layertype': 'fill', // symbology type
-                'layername': 'Res Travelshed', // layer name for the legend
-                'layervisibility': 'none', // visibility of the layer
-                'layercolname': 'cat', // category column name
-                'layercat': ['1-10', '11-20', '21-30', '31-40', '41-50', '51-60'], // categories
-                'layercolor': ['rgba(162, 68, 42, 0.8)', 'rgba(194, 86, 43, 0.8)', 'rgba(226, 104, 41, 0.8)', 'rgba(243, 135, 50, 0.8)', 'rgba(245, 171, 78, 0.8)', 'rgba(255, 200, 138, 0.8)'], // fill color; use rgba
-                'layeroutlinecolor': 'rgba(0, 0, 0, 0.1)', // outline color; can only be set to 1px width; to change the outline width, add another line layer
-            };
-
-            // Generate layer colors
-            var layerColor = ['match', ['get', layerContent['layercolname']]];
-            for (var i = 0; i < layerContent.layercat.length; i++) {
-                layerColor.push(layerContent.layercat[i]);
-                layerColor.push(layerContent.layercolor[i]);
-            };
-            layerColor.push('#000000');
-
-            // Add data source
-            map.addSource(layerContent['sourceid'], {
-                'type': layerContent['sourcetype'],
-                'data': layerContent['sourcedata'],
+        fetch('../config.json')
+            .then(response => response.json())
+            .then(config => {
+                const decodedToken = atob(config.mapboxToken);
+                mapboxgl.accessToken = decodedToken;
+        
+            var map = new mapboxgl.Map({ // creating a new map
+                container: 'mainmap', // same as the div id to place the map
+                style: 'mapbox://styles/mapbox/light-v10', // light base map
+                hash: true, // make sure it's on to get the url with map view
+                attributionControl: true, // show the credit bar
+                customAttribution: '<b><a href="https://github.com/NYCPlanning/td-travelshed/blob/master/Transit%20Travelshed.pdf" target="_blank">Detailed Methodology</a></b>', // add overall credit to the beggining
+                preserveDrawingBuffer: true, // make sure it's on to allow printing
+                center: [-73.9469, 40.7121], // testing to get the centroid of bounds
+                zoom: 9.5, // set the initial zoom of the map view
             });
 
-            // Add fill layer
-            map.addLayer({
-                'id': layerContent['layerid'],
-                'type': layerContent['layertype'],
-                'source': layerContent['sourceid'],
-                'layout': {
-                    'visibility': layerContent['layervisibility'],
-                },
-                'paint': {
-                    'fill-color': layerColor,
-                    'fill-outline-color': layerContent['layeroutlinecolor'],
-                },
-            });
-
-
-
-            // Add NYC Tract
-            // Set layer contents
-            var q = "https://dcptransportation.carto.com/api/v2/sql?q=";
-            q += "SELECT * FROM dcptransportation.nycct";
-            q += "&format=GeoJSON&api_key=W0RW6ZjV-MZRBA1RJdxqqw"; // Carto API
-            var layerContent = {
-                'sourceid': 'nycct', // source id
-                'sourcetype': 'geojson', // source type
-                'sourcedata': q, // data source
-                'layerid': 'nycct', // layer id
-                'layertype': 'fill', // symbology type
-                'layername': 'NYC Tract', // layer name for the legend
-                'layervisibility': 'visible', // visibility of the layer
-                'layercolor': 'rgba(217, 107, 39, 0)', // color for each category; use rgba
-            };
-
-            // Add data source
-            map.addSource(layerContent['sourceid'], {
-                'type': layerContent['sourcetype'],
-                'data': layerContent['sourcedata'],
-            });
-
-            // Add fill layer
-            map.addLayer({
-                'id': layerContent['layerid'],
-                'type': layerContent['layertype'],
-                'source': layerContent['sourceid'],
-                'layout': {
-                    'visibility': layerContent['layervisibility'],
-                },
-                'paint': {
-                    'fill-color': layerContent['layercolor'],
-                },
-            });
-
-
-
-            // Add NYC Tract Outline
-            // Set layer contents
-            var layerContent = {
-                'sourceid': 'nycct', // source id
-                'layerid': 'nycct-outline', // layer id
-                'layertype': 'line', // symbology type
-                'layername': 'NYC Tract Outline', // layer name for the legend
-                'layervisibility': 'visible', // visibility of the layer
-                'layercolor': 'rgba(217, 107, 39, 0.5)', // color for each category; use rgba
-                'layerwidth': 1, // outline width
-            };
-
-            // Add fill layer
-            map.addLayer({
-                'id': layerContent['layerid'],
-                'type': layerContent['layertype'],
-                'source': layerContent['sourceid'],
-                'layout': {
-                    'visibility': layerContent['layervisibility'],
-                },
-                'paint': {
-                    'line-color': layerContent['layercolor'],
-                    'line-width': layerContent['layerwidth'],
-                },
-            });
-
-
-
-            // Add Subway Line
-            // Set layer contents
-            var layerContent = {
-                'sourceid': 'subwayline', // source id
-                'sourcetype': 'geojson', // source type
-                'sourcedata': 'https://raw.githubusercontent.com/NYCPlanning/td-travelshed/master/mapbox/subwayline.geojson', // data source
-                'layerid': 'subwayline', // layer id
-                'layertype': 'line', // symbology type
-                'layername': 'Subway Line', // layer name for the legend
-                'layerlinecap': 'round', // line endings; butt/round/square
-                'layerlinejoin': 'round', // line joining; bevel/round/miter
-                'layervisibility': 'visible', // visibility of the layer
-                'layercolor': 'rgba(150, 150, 150, 1)', // color for each category; use rgba
-                'layerwidth': 1.5, // line width
-            };
-
-            // Add data source
-            map.addSource(layerContent['sourceid'], {
-                'type': layerContent['sourcetype'],
-                'data': layerContent['sourcedata'],
-            });
-
-            // Add fill layer
-            map.addLayer({
-                'id': layerContent['layerid'],
-                'type': layerContent['layertype'],
-                'source': layerContent['sourceid'],
-                'layout': {
-                    'line-cap': layerContent['layerlinecap'],
-                    'line-join': layerContent['layerlinejoin'],
-                    'visibility': layerContent['layervisibility'],
-                },
-                'paint': {
-                    'line-color': layerContent['layercolor'],
-                    'line-width': layerContent['layerwidth'],
-                },
-            });
-
-
-
-            // Add NYC Tract Selected
-            // Set layer contents
-            var layerContent = {
-                'sourceid': 'nycct', // source id
-                'layerid': 'nycct-selected', // layer id
-                'layertype': 'line', // symbology type
-                'layername': 'NYC Tract Selected', // layer name for the legend
-                'layervisibility': 'none', // visibility of the layer
-                'layercolor': 'rgba(0, 0, 0, 1)', // color for each category; use rgba
-                'layerwidth': 2, // outline width
-            };
-
-            // Add fill layer
-            map.addLayer({
-                'id': layerContent['layerid'],
-                'type': layerContent['layertype'],
-                'source': layerContent['sourceid'],
-                'layout': {
-                    'visibility': layerContent['layervisibility'],
-                },
-                'paint': {
-                    'line-color': layerContent['layercolor'],
-                    'line-width': layerContent['layerwidth'],
-                },
-            });
-
-
-
-            // Add NYC Tract Label
-            // Set layer contents
-            var layerContent = {
-                'sourceid': 'nycct', // source id
-                'layerid': 'nycct-label', // layer id
-                'layertype': 'symbol', // symbology type
-                'layername': 'NYC Tract Label', // layer name for the legend
-                'layervisibility': 'visible', // visibility of the layer
-                'layerfield': ['get', 'label'], // categories
-                'layeroverlap': false,
-                'layeranchor': 'center',
-                'layersize': 12,
-                'layercolor': 'rgba(0, 0, 0, 0.8)', // color for each category; use rgba
-            };
-
-            // Add label layer
-            map.addLayer({
-                'id': layerContent['layerid'],
-                'type': layerContent['layertype'],
-                'source': layerContent['sourceid'],
-                'minzoom': 12,
-                'layout': {
-                    'visibility': layerContent['layervisibility'],
-                    'text-field': layerContent['layerfield'],
-                    'text-size': layerContent['layersize'],
-                    'text-allow-overlap': layerContent['layeroverlap'],
-                    'text-anchor': layerContent['layeranchor'],
-                },
-                'paint': {
-                    'text-color': layerContent['layercolor'],
-                },
-            });
-
-
-
-            // Add selector
-            // Add click events
-            map.on('click', 'nycct', function (e) {
-                if (e.features[0].properties.tractid != sl) {
-                    sl = e.features[0].properties.tractid;
-                    map.setPaintProperty('nycct', 'fill-color', 'rgba(217, 107, 39, 0)');
-                    map.setPaintProperty('nycct-outline', 'line-color', 'rgba(0, 0, 0, 0.1)');
-                    map.setLayoutProperty('nycct-selected', 'visibility', 'visible');
-                    map.setFilter('nycct-selected', ['==', 'tractid', sl]);
-                    map.setFilter('nycct-label', ['==', 'tractid', sl]);
-                    q = "https://dcptransportation.carto.com/api/v2/sql?q=";
-                    q += "WITH resct AS (SELECT cartodb_id, worktractid, time FROM dcptransportation.resct WHERE restractid='";
-                    q += sl;
-                    q += "') SELECT quadstatectclipped.*, resct.time, "
-                    q += "CASE WHEN time <=10 THEN '1-10' WHEN time>10 AND time<=20 THEN '11-20' WHEN time>20 AND time<=30 THEN '21-30' WHEN time>30 AND time<=40 THEN '31-40' WHEN time>40 AND time<=50 THEN '41-50' ELSE '51-60' END AS cat "
-                    q += "FROM dcptransportation.quadstatectclipped INNER JOIN resct ON tractid=worktractid";
-                    q += "&format=GeoJSON&api_key=W0RW6ZjV-MZRBA1RJdxqqw"; // Carto API
-                    map.getSource('resct').setData(q);
-                    map.setLayoutProperty('resct', 'visibility', 'visible');
-                    document.getElementById('legend1').style.display = 'none';
-                    document.getElementById('legend2').style.display = 'flex';
-                    document.getElementById('selectedtract').textContent = sl;
-                    document.getElementById('exp').href = q;
-                    var p = "https://dcptransportation.carto.com/api/v2/sql?q=";
-                    p += "SELECT * FROM dcptransportation.resbkgravity WHERE restractid=";
-                    p += sl;
-                    p += ' ORDER BY cat ASC'
-                    p += "&format=JSON&api_key=W0RW6ZjV-MZRBA1RJdxqqw"; // Carto API
-                    Plotly.d3.json(p, function (data) {
-                        var x = [], y = [], ht = [];
-                        for (var i = 0; i < data['rows'].length; i++) {
-                            x.push(data['rows'][i]['cat'].replace('WAC', ''));
-                            y.push(data['rows'][i]['wac']);
-                            ht.push(Plotly.d3.format('.3s')(data['rows'][i]['wac']));
+            // Add layers
+            map.on('load', function () {
+    
+                // Add geocoder control
+                map.addControl(new MapboxGeocoder({
+                    accessToken: mapboxgl.accessToken,
+                    mapboxgl: mapboxgl
+                }),
+                    'top-left', // control position
+                );
+    
+                // Add full screen control
+                map.addControl(new mapboxgl.FullscreenControl({
+                    container: document.querySelector('body'),
+                }),
+                    'bottom-left', // control position
+                );
+    
+                // Add navigation control
+                map.addControl(new mapboxgl.NavigationControl({
+                    showCompass: true, // show compass
+                    showZoom: true, // show zoom
+                    visualizePitch: true, // show pitch
+                }),
+                    'bottom-left', // control position
+                );
+    
+    
+    
+                var sl = '';
+                var bm = '';
+    
+    
+    
+                // Add Travelshed
+                // Set layer contents
+                var q = "https://dcptransportation.carto.com/api/v2/sql?q=";
+                q += "WITH resct AS (SELECT cartodb_id, worktractid, time FROM dcptransportation.resct WHERE restractid='";
+                q += sl;
+                q += "') SELECT quadstatectclipped.*, resct.time, "
+                q += "CASE WHEN time <=10 THEN '1-10' WHEN time>10 AND time<=20 THEN '11-20' WHEN time>20 AND time<=30 THEN '21-30' WHEN time>30 AND time<=40 THEN '31-40' WHEN time>40 AND time<=50 THEN '41-50' ELSE '51-60' END AS cat "
+                q += "FROM dcptransportation.quadstatectclipped INNER JOIN resct ON tractid=worktractid";
+                q += "&format=GeoJSON&api_key=W0RW6ZjV-MZRBA1RJdxqqw"; // Carto API
+                var layerContent = {
+                    'sourceid': 'resct', // source id
+                    'sourcetype': 'geojson', // source type
+                    'sourcedata': q, // data source
+                    'layerid': 'resct', // layer id
+                    'layertype': 'fill', // symbology type
+                    'layername': 'Res Travelshed', // layer name for the legend
+                    'layervisibility': 'none', // visibility of the layer
+                    'layercolname': 'cat', // category column name
+                    'layercat': ['1-10', '11-20', '21-30', '31-40', '41-50', '51-60'], // categories
+                    'layercolor': ['rgba(162, 68, 42, 0.8)', 'rgba(194, 86, 43, 0.8)', 'rgba(226, 104, 41, 0.8)', 'rgba(243, 135, 50, 0.8)', 'rgba(245, 171, 78, 0.8)', 'rgba(255, 200, 138, 0.8)'], // fill color; use rgba
+                    'layeroutlinecolor': 'rgba(0, 0, 0, 0.1)', // outline color; can only be set to 1px width; to change the outline width, add another line layer
+                };
+    
+                // Generate layer colors
+                var layerColor = ['match', ['get', layerContent['layercolname']]];
+                for (var i = 0; i < layerContent.layercat.length; i++) {
+                    layerColor.push(layerContent.layercat[i]);
+                    layerColor.push(layerContent.layercolor[i]);
+                };
+                layerColor.push('#000000');
+    
+                // Add data source
+                map.addSource(layerContent['sourceid'], {
+                    'type': layerContent['sourcetype'],
+                    'data': layerContent['sourcedata'],
+                });
+    
+                // Add fill layer
+                map.addLayer({
+                    'id': layerContent['layerid'],
+                    'type': layerContent['layertype'],
+                    'source': layerContent['sourceid'],
+                    'layout': {
+                        'visibility': layerContent['layervisibility'],
+                    },
+                    'paint': {
+                        'fill-color': layerColor,
+                        'fill-outline-color': layerContent['layeroutlinecolor'],
+                    },
+                });
+    
+    
+    
+                // Add NYC Tract
+                // Set layer contents
+                var q = "https://dcptransportation.carto.com/api/v2/sql?q=";
+                q += "SELECT * FROM dcptransportation.nycct";
+                q += "&format=GeoJSON&api_key=W0RW6ZjV-MZRBA1RJdxqqw"; // Carto API
+                var layerContent = {
+                    'sourceid': 'nycct', // source id
+                    'sourcetype': 'geojson', // source type
+                    'sourcedata': q, // data source
+                    'layerid': 'nycct', // layer id
+                    'layertype': 'fill', // symbology type
+                    'layername': 'NYC Tract', // layer name for the legend
+                    'layervisibility': 'visible', // visibility of the layer
+                    'layercolor': 'rgba(217, 107, 39, 0)', // color for each category; use rgba
+                };
+    
+                // Add data source
+                map.addSource(layerContent['sourceid'], {
+                    'type': layerContent['sourcetype'],
+                    'data': layerContent['sourcedata'],
+                });
+    
+                // Add fill layer
+                map.addLayer({
+                    'id': layerContent['layerid'],
+                    'type': layerContent['layertype'],
+                    'source': layerContent['sourceid'],
+                    'layout': {
+                        'visibility': layerContent['layervisibility'],
+                    },
+                    'paint': {
+                        'fill-color': layerContent['layercolor'],
+                    },
+                });
+    
+    
+    
+                // Add NYC Tract Outline
+                // Set layer contents
+                var layerContent = {
+                    'sourceid': 'nycct', // source id
+                    'layerid': 'nycct-outline', // layer id
+                    'layertype': 'line', // symbology type
+                    'layername': 'NYC Tract Outline', // layer name for the legend
+                    'layervisibility': 'visible', // visibility of the layer
+                    'layercolor': 'rgba(217, 107, 39, 0.5)', // color for each category; use rgba
+                    'layerwidth': 1, // outline width
+                };
+    
+                // Add fill layer
+                map.addLayer({
+                    'id': layerContent['layerid'],
+                    'type': layerContent['layertype'],
+                    'source': layerContent['sourceid'],
+                    'layout': {
+                        'visibility': layerContent['layervisibility'],
+                    },
+                    'paint': {
+                        'line-color': layerContent['layercolor'],
+                        'line-width': layerContent['layerwidth'],
+                    },
+                });
+    
+    
+    
+                // Add Subway Line
+                // Set layer contents
+                var layerContent = {
+                    'sourceid': 'subwayline', // source id
+                    'sourcetype': 'geojson', // source type
+                    'sourcedata': 'https://raw.githubusercontent.com/NYCPlanning/td-travelshed/master/mapbox/subwayline.geojson', // data source
+                    'layerid': 'subwayline', // layer id
+                    'layertype': 'line', // symbology type
+                    'layername': 'Subway Line', // layer name for the legend
+                    'layerlinecap': 'round', // line endings; butt/round/square
+                    'layerlinejoin': 'round', // line joining; bevel/round/miter
+                    'layervisibility': 'visible', // visibility of the layer
+                    'layercolor': 'rgba(150, 150, 150, 1)', // color for each category; use rgba
+                    'layerwidth': 1.5, // line width
+                };
+    
+                // Add data source
+                map.addSource(layerContent['sourceid'], {
+                    'type': layerContent['sourcetype'],
+                    'data': layerContent['sourcedata'],
+                });
+    
+                // Add fill layer
+                map.addLayer({
+                    'id': layerContent['layerid'],
+                    'type': layerContent['layertype'],
+                    'source': layerContent['sourceid'],
+                    'layout': {
+                        'line-cap': layerContent['layerlinecap'],
+                        'line-join': layerContent['layerlinejoin'],
+                        'visibility': layerContent['layervisibility'],
+                    },
+                    'paint': {
+                        'line-color': layerContent['layercolor'],
+                        'line-width': layerContent['layerwidth'],
+                    },
+                });
+    
+    
+    
+                // Add NYC Tract Selected
+                // Set layer contents
+                var layerContent = {
+                    'sourceid': 'nycct', // source id
+                    'layerid': 'nycct-selected', // layer id
+                    'layertype': 'line', // symbology type
+                    'layername': 'NYC Tract Selected', // layer name for the legend
+                    'layervisibility': 'none', // visibility of the layer
+                    'layercolor': 'rgba(0, 0, 0, 1)', // color for each category; use rgba
+                    'layerwidth': 2, // outline width
+                };
+    
+                // Add fill layer
+                map.addLayer({
+                    'id': layerContent['layerid'],
+                    'type': layerContent['layertype'],
+                    'source': layerContent['sourceid'],
+                    'layout': {
+                        'visibility': layerContent['layervisibility'],
+                    },
+                    'paint': {
+                        'line-color': layerContent['layercolor'],
+                        'line-width': layerContent['layerwidth'],
+                    },
+                });
+    
+    
+    
+                // Add NYC Tract Label
+                // Set layer contents
+                var layerContent = {
+                    'sourceid': 'nycct', // source id
+                    'layerid': 'nycct-label', // layer id
+                    'layertype': 'symbol', // symbology type
+                    'layername': 'NYC Tract Label', // layer name for the legend
+                    'layervisibility': 'visible', // visibility of the layer
+                    'layerfield': ['get', 'label'], // categories
+                    'layeroverlap': false,
+                    'layeranchor': 'center',
+                    'layersize': 12,
+                    'layercolor': 'rgba(0, 0, 0, 0.8)', // color for each category; use rgba
+                };
+    
+                // Add label layer
+                map.addLayer({
+                    'id': layerContent['layerid'],
+                    'type': layerContent['layertype'],
+                    'source': layerContent['sourceid'],
+                    'minzoom': 12,
+                    'layout': {
+                        'visibility': layerContent['layervisibility'],
+                        'text-field': layerContent['layerfield'],
+                        'text-size': layerContent['layersize'],
+                        'text-allow-overlap': layerContent['layeroverlap'],
+                        'text-anchor': layerContent['layeranchor'],
+                    },
+                    'paint': {
+                        'text-color': layerContent['layercolor'],
+                    },
+                });
+    
+    
+    
+                // Add selector
+                // Add click events
+                map.on('click', 'nycct', function (e) {
+                    if (e.features[0].properties.tractid != sl) {
+                        sl = e.features[0].properties.tractid;
+                        map.setPaintProperty('nycct', 'fill-color', 'rgba(217, 107, 39, 0)');
+                        map.setPaintProperty('nycct-outline', 'line-color', 'rgba(0, 0, 0, 0.1)');
+                        map.setLayoutProperty('nycct-selected', 'visibility', 'visible');
+                        map.setFilter('nycct-selected', ['==', 'tractid', sl]);
+                        map.setFilter('nycct-label', ['==', 'tractid', sl]);
+                        q = "https://dcptransportation.carto.com/api/v2/sql?q=";
+                        q += "WITH resct AS (SELECT cartodb_id, worktractid, time FROM dcptransportation.resct WHERE restractid='";
+                        q += sl;
+                        q += "') SELECT quadstatectclipped.*, resct.time, "
+                        q += "CASE WHEN time <=10 THEN '1-10' WHEN time>10 AND time<=20 THEN '11-20' WHEN time>20 AND time<=30 THEN '21-30' WHEN time>30 AND time<=40 THEN '31-40' WHEN time>40 AND time<=50 THEN '41-50' ELSE '51-60' END AS cat "
+                        q += "FROM dcptransportation.quadstatectclipped INNER JOIN resct ON tractid=worktractid";
+                        q += "&format=GeoJSON&api_key=W0RW6ZjV-MZRBA1RJdxqqw"; // Carto API
+                        map.getSource('resct').setData(q);
+                        map.setLayoutProperty('resct', 'visibility', 'visible');
+                        document.getElementById('legend1').style.display = 'none';
+                        document.getElementById('legend2').style.display = 'flex';
+                        document.getElementById('selectedtract').textContent = sl;
+                        document.getElementById('exp').href = q;
+                        var p = "https://dcptransportation.carto.com/api/v2/sql?q=";
+                        p += "SELECT * FROM dcptransportation.resbkgravity WHERE restractid=";
+                        p += sl;
+                        p += ' ORDER BY cat ASC'
+                        p += "&format=JSON&api_key=W0RW6ZjV-MZRBA1RJdxqqw"; // Carto API
+                        Plotly.d3.json(p, function (data) {
+                            var x = [], y = [], ht = [];
+                            for (var i = 0; i < data['rows'].length; i++) {
+                                x.push(data['rows'][i]['cat'].replace('WAC', ''));
+                                y.push(data['rows'][i]['wac']);
+                                ht.push(Plotly.d3.format('.3s')(data['rows'][i]['wac']));
+                            };
+                            document.getElementById('totaljob').textContent = Plotly.d3.format(',')(Plotly.d3.sum(y));
+                            var trace = {
+                                x: x,
+                                y: y,
+                                type: 'bar',
+                                showlegend: false,
+                                marker: { color: ['rgba(162, 68, 42, 0.8)', 'rgba(194, 86, 43, 0.8)', 'rgba(226, 104, 41, 0.8)', 'rgba(243, 135, 50, 0.8)', 'rgba(245, 171, 78, 0.8)', 'rgba(255, 200, 138, 0.8)'] },
+                                hoverinfo: 'text',
+                                hovertext: ht,
+                            };
+                            var layout = {
+                                title: {
+                                    text: '<b> Jobs Accessible by Travel Time </b>',
+                                    font: { size: 14 },
+                                },
+                                xaxis: {
+                                    tickangle: -90,
+                                    tickfont: { size: 12 },
+                                    fixedrange: true,
+                                    showgrid: false,
+                                },
+                                yaxis: {
+                                    tickfont: { size: 12 },
+                                    range: [0, 1650000],
+                                    fixedrange: true,
+                                    showgrid: false,
+                                    zeroline: false,
+                                },
+                                font: {
+                                    family: 'arial',
+                                    color: 'rgba(0, 0, 0, 0.9)',
+                                },
+                                width: 250,
+                                height: 200,
+                                margin: {
+                                    l: 30,
+                                    r: 0,
+                                    t: 25,
+                                    b: 40,
+                                },
+                                plot_bgcolor: 'rgba(0, 0, 0, 0)',
+                                paper_bgcolor: 'rgba(0, 0, 0, 0)',
+                                dragmode: false,
+                            };
+                            Plotly.react('plotlyjob',
+                                [trace],
+                                layout,
+                                { displayModeBar: false });
+                        });
+                    } else {
+                        sl = '';
+                        map.setPaintProperty('nycct', 'fill-color', 'rgba(217, 107, 39, 0)');
+                        map.setPaintProperty('nycct-outline', 'line-color', 'rgba(217, 107, 39, 0.5)');
+                        map.setLayoutProperty('nycct-selected', 'visibility', 'none');
+                        map.setFilter('nycct-selected', null);
+                        map.setFilter('nycct-label', null);
+                        q = "https://dcptransportation.carto.com/api/v2/sql?q=";
+                        q += "WITH resct AS (SELECT cartodb_id, worktractid, time FROM dcptransportation.resct WHERE restractid='";
+                        q += sl;
+                        q += "') SELECT quadstatectclipped.*, resct.time, "
+                        q += "CASE WHEN time <=10 THEN '1-10' WHEN time>10 AND time<=20 THEN '11-20' WHEN time>20 AND time<=30 THEN '21-30' WHEN time>30 AND time<=40 THEN '31-40' WHEN time>40 AND time<=50 THEN '41-50' ELSE '51-60' END AS cat "
+                        q += "FROM dcptransportation.quadstatectclipped INNER JOIN resct ON tractid=worktractid";
+                        q += "&format=GeoJSON&api_key=W0RW6ZjV-MZRBA1RJdxqqw"; // Carto API
+                        map.getSource('resct').setData(q);
+                        map.setLayoutProperty('resct', 'visibility', 'none');
+                        document.getElementById('legend1').style.display = 'flex';
+                        document.getElementById('legend2').style.display = 'none';
+                    };
+                });
+    
+                // Add hover events
+                map.on('mousemove', 'nycct', function (e) {
+                    map.getCanvas().style.cursor = 'pointer';
+                    if (e.features[0].properties.tractid != bm) {
+                        if (map.getLayer('hover-selector') != undefined) {
+                            map.removeLayer('hover-selector');
                         };
-                        document.getElementById('totaljob').textContent = Plotly.d3.format(',')(Plotly.d3.sum(y));
-                        var trace = {
-                            x: x,
-                            y: y,
-                            type: 'bar',
-                            showlegend: false,
-                            marker: { color: ['rgba(162, 68, 42, 0.8)', 'rgba(194, 86, 43, 0.8)', 'rgba(226, 104, 41, 0.8)', 'rgba(243, 135, 50, 0.8)', 'rgba(245, 171, 78, 0.8)', 'rgba(255, 200, 138, 0.8)'] },
-                            hoverinfo: 'text',
-                            hovertext: ht,
-                        };
-                        var layout = {
-                            title: {
-                                text: '<b> Jobs Accessible by Travel Time </b>',
-                                font: { size: 14 },
+                        map.addLayer({
+                            'id': 'hover-selector',
+                            'type': 'line',
+                            'source': 'nycct',
+                            'filter': ['==', 'tractid', e.features[0].properties.tractid],
+                            'paint': {
+                                'line-color': 'rgba(0, 0, 0, 1)',
+                                'line-width': 2,
                             },
-                            xaxis: {
-                                tickangle: -90,
-                                tickfont: { size: 12 },
-                                fixedrange: true,
-                                showgrid: false,
-                            },
-                            yaxis: {
-                                tickfont: { size: 12 },
-                                range: [0, 1650000],
-                                fixedrange: true,
-                                showgrid: false,
-                                zeroline: false,
-                            },
-                            font: {
-                                family: 'arial',
-                                color: 'rgba(0, 0, 0, 0.9)',
-                            },
-                            width: 250,
-                            height: 200,
-                            margin: {
-                                l: 30,
-                                r: 0,
-                                t: 25,
-                                b: 40,
-                            },
-                            plot_bgcolor: 'rgba(0, 0, 0, 0)',
-                            paper_bgcolor: 'rgba(0, 0, 0, 0)',
-                            dragmode: false,
-                        };
-                        Plotly.react('plotlyjob',
-                            [trace],
-                            layout,
-                            { displayModeBar: false });
-                    });
-                } else {
+                        });
+                        bm = e.features[0].properties.tractid;
+                    };
+                });
+                map.on('mouseleave', 'nycct', function (e) {
+                    map.getCanvas().style.cursor = '';
+                    if (map.getLayer('hover-selector') != undefined) {
+                        map.removeLayer('hover-selector');
+                    };
+                    bm = '';
+                });
+    
+    
+    
+                //Add popup
+                var popup = new mapboxgl.Popup({
+                    closeButton: false, // close button
+                    closeOnClick: false, // close if click on map
+                    closeOnMove: false, // close if move the map
+                    anchor: 'bottom', // anchor of the popup
+                    offset: 0, // offset from the feature
+                    maxWidth: 'none', // max width of the popoup; 'none' to fit to the content                
+                });
+                // Add hover events
+                map.on('mousemove', 'resct', function (e) {
+                    var coordinates = e.lngLat; // get pointer coordinates
+                    var description = "<b>Origin Census Tract: </b><span>" + sl + "</span><br>"; // description in the popup
+                    description += "<b>Destination Census Tract: </b><span>" + e.features[0].properties.tractid + "</span><br>";
+                    description += "<b>AM Peak Transit Travel Time: </b><span>" + e.features[0].properties.time + " mins</span><br>";
+                    popup.setLngLat(coordinates).setHTML(description).addTo(map); //add popup
+                });
+                map.on('mouseleave', 'resct', function (e) {
+                    popup.remove()
+                });
+    
+    
+    
+                // Add reset event
+                rst.addEventListener('click', function () {
                     sl = '';
                     map.setPaintProperty('nycct', 'fill-color', 'rgba(217, 107, 39, 0)');
                     map.setPaintProperty('nycct-outline', 'line-color', 'rgba(217, 107, 39, 0.5)');
@@ -646,83 +720,12 @@
                     map.setLayoutProperty('resct', 'visibility', 'none');
                     document.getElementById('legend1').style.display = 'flex';
                     document.getElementById('legend2').style.display = 'none';
-                };
+                });
             });
-
-            // Add hover events
-            map.on('mousemove', 'nycct', function (e) {
-                map.getCanvas().style.cursor = 'pointer';
-                if (e.features[0].properties.tractid != bm) {
-                    if (map.getLayer('hover-selector') != undefined) {
-                        map.removeLayer('hover-selector');
-                    };
-                    map.addLayer({
-                        'id': 'hover-selector',
-                        'type': 'line',
-                        'source': 'nycct',
-                        'filter': ['==', 'tractid', e.features[0].properties.tractid],
-                        'paint': {
-                            'line-color': 'rgba(0, 0, 0, 1)',
-                            'line-width': 2,
-                        },
-                    });
-                    bm = e.features[0].properties.tractid;
-                };
-            });
-            map.on('mouseleave', 'nycct', function (e) {
-                map.getCanvas().style.cursor = '';
-                if (map.getLayer('hover-selector') != undefined) {
-                    map.removeLayer('hover-selector');
-                };
-                bm = '';
-            });
-
-
-
-            //Add popup
-            var popup = new mapboxgl.Popup({
-                closeButton: false, // close button
-                closeOnClick: false, // close if click on map
-                closeOnMove: false, // close if move the map
-                anchor: 'bottom', // anchor of the popup
-                offset: 0, // offset from the feature
-                maxWidth: 'none', // max width of the popoup; 'none' to fit to the content                
-            });
-            // Add hover events
-            map.on('mousemove', 'resct', function (e) {
-                var coordinates = e.lngLat; // get pointer coordinates
-                var description = "<b>Origin Census Tract: </b><span>" + sl + "</span><br>"; // description in the popup
-                description += "<b>Destination Census Tract: </b><span>" + e.features[0].properties.tractid + "</span><br>";
-                description += "<b>AM Peak Transit Travel Time: </b><span>" + e.features[0].properties.time + " mins</span><br>";
-                popup.setLngLat(coordinates).setHTML(description).addTo(map); //add popup
-            });
-            map.on('mouseleave', 'resct', function (e) {
-                popup.remove()
-            });
-
-
-
-            // Add reset event
-            rst.addEventListener('click', function () {
-                sl = '';
-                map.setPaintProperty('nycct', 'fill-color', 'rgba(217, 107, 39, 0)');
-                map.setPaintProperty('nycct-outline', 'line-color', 'rgba(217, 107, 39, 0.5)');
-                map.setLayoutProperty('nycct-selected', 'visibility', 'none');
-                map.setFilter('nycct-selected', null);
-                map.setFilter('nycct-label', null);
-                q = "https://dcptransportation.carto.com/api/v2/sql?q=";
-                q += "WITH resct AS (SELECT cartodb_id, worktractid, time FROM dcptransportation.resct WHERE restractid='";
-                q += sl;
-                q += "') SELECT quadstatectclipped.*, resct.time, "
-                q += "CASE WHEN time <=10 THEN '1-10' WHEN time>10 AND time<=20 THEN '11-20' WHEN time>20 AND time<=30 THEN '21-30' WHEN time>30 AND time<=40 THEN '31-40' WHEN time>40 AND time<=50 THEN '41-50' ELSE '51-60' END AS cat "
-                q += "FROM dcptransportation.quadstatectclipped INNER JOIN resct ON tractid=worktractid";
-                q += "&format=GeoJSON&api_key=W0RW6ZjV-MZRBA1RJdxqqw"; // Carto API
-                map.getSource('resct').setData(q);
-                map.setLayoutProperty('resct', 'visibility', 'none');
-                document.getElementById('legend1').style.display = 'flex';
-                document.getElementById('legend2').style.display = 'none';
-            });
-        });
+                                        })
+          .catch(err => {
+            console.error('Failed to load config:', err);
+          });
     </script>
 
 </body>
