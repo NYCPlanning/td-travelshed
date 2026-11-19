@@ -3,6 +3,9 @@ name: Rotate Mapbox Token
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   update-token:
     runs-on: ubuntu-latest
